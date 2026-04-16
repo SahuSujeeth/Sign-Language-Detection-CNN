@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sign Language Detector</title>
+</head>
+
+<body style="text-align:center; font-family:Arial;">
+
+<h1>Sign Language Detection</h1>
+
+<!-- CAMERA -->
+<video id="video" width="400" height="300" autoplay 
+style="transform: scaleX(-1); border:3px solid black;"></video>
+
+<br><br>
+
+<!-- BUTTON -->
+<button onclick="capture()" style="padding:10px 20px; font-size:18px;">Predict</button>
+
+<br><br>
+
+<!-- RESULT -->
+<h2 id="result">Result: </h2>
+
+<script>
+    const video = document.getElementById("video");
+
+    // Start camera
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => video.srcObject = stream);
+
+    function capture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 64;
+        canvas.height = 64;
+
+        const ctx = canvas.getContext("2d");
+
+        // 🔥 IMPORTANT: ROI crop (same as Python)
+        ctx.drawImage(video, 100, 50, 200, 200, 0, 0, 64, 64);
+
+        const image = canvas.toDataURL("image/jpeg").split(",")[1];
+
+        fetch("http://127.0.0.1:5000/predict", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ image: image })
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("result").innerText =
+                "Result: " + data.label + " (" + (data.confidence*100).toFixed(2) + "%)";
+        });
+    }
+</script>
+
+</body>
+</html>
